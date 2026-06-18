@@ -36,17 +36,6 @@ class LiquiditySweep:
     confirmation_candles: int = 0  # Candles since sweep occurred
 
 
-@dataclass
-class InducementZone:
-    """Represents an inducement zone (price manipulation area)"""
-    high: float
-    low: float
-    created_at: datetime
-    origin_liquidity: LiquidityZone
-    is_active: bool = True
-    touches: int = 0
-
-
 class LiquidityEngine:
     """
     Detects and tracks liquidity zones for SMC trading
@@ -64,7 +53,6 @@ class LiquidityEngine:
         self.equal_high_tolerance = equal_high_tolerance
         self.liquidity_zones: Dict[int, List[LiquidityZone]] = {tf: [] for tf in self.timeframes}
         self.recent_sweeps: Dict[int, List[LiquiditySweep]] = {tf: [] for tf in self.timeframes}
-        self.inducement_zones: Dict[int, List[InducementZone]] = {tf: [] for tf in self.timeframes}
 
     def detect_liquidity_zones(
         self,
@@ -108,52 +96,6 @@ class LiquidityEngine:
                     source="swing_high",
                     created_at=current_timestamp,
                 )
-
-    def detect_equal_highs(
-        self,
-        timeframe: int,
-        recent_highs: List[float],
-        current_timestamp: datetime,
-    ) -> None:
-        """Detect equal highs (buy-side liquidity above current price)"""
-        if len(recent_highs) < 2:
-            return
-
-        tolerance = recent_highs[-1] * self.equal_high_tolerance
-
-        for i, high in enumerate(recent_highs[:-1]):
-            if abs(high - recent_highs[-1]) < tolerance and high > recent_highs[-1]:
-                self._add_liquidity_zone(
-                    timeframe=timeframe,
-                    price_level=high,
-                    zone_type="sell_side",
-                    source="equal_high",
-                    created_at=current_timestamp,
-                )
-                logger.info(f"[TF:{timeframe}] Equal High detected at {high}")
-
-    def detect_equal_lows(
-        self,
-        timeframe: int,
-        recent_lows: List[float],
-        current_timestamp: datetime,
-    ) -> None:
-        """Detect equal lows (sell-side liquidity below current price)"""
-        if len(recent_lows) < 2:
-            return
-
-        tolerance = recent_lows[-1] * self.equal_high_tolerance
-
-        for i, low in enumerate(recent_lows[:-1]):
-            if abs(low - recent_lows[-1]) < tolerance and low < recent_lows[-1]:
-                self._add_liquidity_zone(
-                    timeframe=timeframe,
-                    price_level=low,
-                    zone_type="buy_side",
-                    source="equal_low",
-                    created_at=current_timestamp,
-                )
-                logger.info(f"[TF:{timeframe}] Equal Low detected at {low}")
 
     def detect_liquidity_sweep(
         self,
@@ -279,31 +221,3 @@ class LiquidityEngine:
             zones = [z for z in zones if z.type == zone_type]
 
         return zones
-
-    def get_nearest_liquidity(self, timeframe: int, zone_type: str) -> Optional[LiquidityZone]:
-        """Get the nearest liquidity zone of a given type"""
-        zones = self.get_liquidity_zones(timeframe, zone_type)
-        if not zones:
-            return None
-
-        return zones[-1]  # Assumes zones are sorted by recency
-
-    def cleanup_old_zones(self, timeframe: int, max_age_minutes: int = 240) -> None:
-        """Remove liquidity zones older than max_age_minutes"""
-        if timeframe not in self.liquidity_zones:
-            return
-
-        current_time = datetime.utcnow()
-        self.liquidity_zones[timeframe] = [
-            z
-            for z in self.liquidity_zones[timeframe]
-            if (current_time - z.created_at).total_seconds() < max_age_minutes * 60
-        ]
-
-    def has_recent_sweep(self, timeframe: int, direction: str, max_candles_ago: int = 5) -> bool:
-        """Check if there was a recent sweep in the given direction"""
-        sweep = self.get_recent_sweep(timeframe, direction)
-        if not sweep:
-            return False
-
-        return sweep.candle_index >= (sweep.candle_index - max_candles_ago)

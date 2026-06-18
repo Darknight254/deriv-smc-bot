@@ -51,6 +51,14 @@ scoring:
   pd_array_alignment: 10
   total_threshold: 80              # Minimum score to enter trade
 
+alerts:
+  telegram_enabled: true
+  email_enabled: false
+  desktop_alerts: true
+  alert_on_setup: true             # Alert when high-quality setup forms
+  alert_on_entry: true             # Alert when trade is entered
+  alert_on_exit: true              # Alert when trade is closed
+
 database:
   path: ./data/trades.db
   backup_interval_hours: 24
