@@ -1,0 +1,68 @@
+trading:
+  symbols:
+    - R_100      # Volatility 100
+    - R_50       # Volatility 50
+    - R_10       # Volatility 10
+  
+  timeframes:
+    primary: 15      # Minutes
+    confirmation: 5  # Minutes
+    execution: 1     # Minutes
+
+risk_management:
+  risk_per_trade: 0.5              # % of account
+  max_daily_losses: 3              # Max losing trades per day
+  max_drawdown_percent: 5.0        # % drawdown before stop
+  min_risk_reward_ratio: 3.0       # 1:3 minimum
+  max_concurrent_trades: 2
+
+smc_settings:
+  liquidity:
+    swing_lookback: 20             # Candles for swing detection
+    equal_high_tolerance: 0.0005   # % tolerance for equal highs
+    equal_low_tolerance: 0.0005    # % tolerance for equal lows
+    
+  fvg:
+    min_gap_size: 0.0010           # Minimum gap size to consider
+    max_age_candles: 100           # Max candles before FVG expires
+    
+  order_block:
+    min_strength_score: 70         # Minimum OB strength (0-100)
+    min_touches: 2                 # Minimum touches to validate
+    
+  pd_array:
+    significant_move_percent: 1.5  # % move to define significant swing
+    
+  structure:
+    bos_confirmation: candle_close # Must use candle close, not wicks
+    choch_strength_threshold: 70   # Confidence score threshold
+
+entry_conditions:
+  min_confluence_factors: 3        # At least 3 SMC factors must align
+  liquidity_sweep_required: true
+  higher_tf_bias_required: true
+  
+scoring:
+  liquidity_sweep: 20
+  bos_confirmation: 20
+  choch_confirmation: 20
+  fvg_alignment: 15
+  order_block_alignment: 15
+  pd_array_alignment: 10
+  total_threshold: 80              # Minimum score to enter trade
+
+database:
+  path: ./data/trades.db
+  backup_interval_hours: 24
+
+logging:
+  level: INFO
+  file: ./logs/bot.log
+  max_file_size_mb: 100
+  backup_count: 5
+
+visualization:
+  update_interval_seconds: 5
+  chart_height: 800
+  chart_width: 1400
+  include_volume: true
